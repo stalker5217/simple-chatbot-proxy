@@ -1,0 +1,44 @@
+package com.simplechatbotproxy.chat.service.impl;
+
+import com.google.cloud.dialogflow.v2.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.UUID;
+
+@Slf4j
+@Service
+public class DialogflowCommonService {
+    public QueryResult detectIntentByEvent(String eventName) throws IOException {
+        try (SessionsClient sessionsClient = SessionsClient.create()) {
+            UUID uuid = UUID.randomUUID();
+            SessionName session = SessionName.of("song-chat-service", uuid.toString());
+
+            log.info(String.format("Session Path : %s", session.toString()));
+
+            EventInput eventInput = EventInput
+                    .newBuilder()
+                    .setLanguageCode("ko-KR")
+                    .setName(eventName)
+                    .build();
+
+            QueryInput queryInput = QueryInput
+                    .newBuilder()
+                    .setEvent(eventInput).build();
+
+            DetectIntentResponse response = sessionsClient.detectIntent(session, queryInput);
+            QueryResult queryResult = response.getQueryResult();
+
+            log.info("====================");
+            log.info(String.format("Query Text: %s", queryResult.getQueryText()));
+            log.info(String.format(
+                    "Detected Intent: %s (confidence: %f)",
+                    queryResult.getIntent().getDisplayName(), queryResult.getIntentDetectionConfidence()));
+            log.info(String.format("Fulfillment Text: '%s'", queryResult.getFulfillmentText()));
+            log.info("====================");
+
+            return queryResult;
+        }
+    }
+}
