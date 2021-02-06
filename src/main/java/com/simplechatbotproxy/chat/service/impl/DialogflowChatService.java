@@ -16,6 +16,8 @@ import java.io.IOException;
 public class DialogflowChatService implements ChatService {
     private static final String WELCOME = "Welcome";
 
+    private static final String NULL_POINTER_EXCEPTION_MSG = "Cannot resolve welcome message";
+
     private final DialogflowCommonService dialogflowCommonService;
 
     @Autowired
@@ -38,9 +40,26 @@ public class DialogflowChatService implements ChatService {
         }
         catch(IOException e){
             log.error(e.getMessage());
-            throw new NullPointerException("Cannot resolve welcome message");
+            throw new NullPointerException(NULL_POINTER_EXCEPTION_MSG);
         }
 
         return welcomeMessage;
+    }
+
+    public ChatMessageVO getQueryResultMessage(String text){
+        ChatMessageVO resultMessage;
+
+        try{
+            QueryResult queryResult = dialogflowCommonService.detectIntentByText(text);
+
+            resultMessage = new ChatMessageVO();
+            resultMessage.setText(queryResult.getFulfillmentText());
+        }
+        catch(IOException e){
+            log.error(e.getMessage());
+            throw new NullPointerException(NULL_POINTER_EXCEPTION_MSG);
+        }
+
+        return resultMessage;
     }
 }

@@ -4,4 +4,5 @@ import com.simplechatbotproxy.chat.model.ChatMessageVO;
 
 public interface ChatService {
     ChatMessageVO getWelcomeMessage();
+    ChatMessageVO getQueryResultMessage(String text);
 }

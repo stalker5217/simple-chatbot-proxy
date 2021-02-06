@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -36,6 +37,25 @@ public class ChatController {
         }
 
         log.info("Handling [/chat/welcome] End");
+
+        return ret;
+    }
+
+    @GetMapping("/query")
+    public ResponseEntity<ChatMessageVO> chatQuery(@RequestParam("text") String text){
+        log.info("Handling [/chat/query] Start");
+
+        ResponseEntity<ChatMessageVO> ret;
+        try{
+            ChatMessageVO welcomeMessage = chatService.getQueryResultMessage(text);
+            ret =  new ResponseEntity<>(welcomeMessage, HttpStatus.OK);
+        }
+        catch(NullPointerException e){
+            log.error(e.getMessage());
+            ret = new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        log.info("Handling [/chat/query] End");
 
         return ret;
     }
