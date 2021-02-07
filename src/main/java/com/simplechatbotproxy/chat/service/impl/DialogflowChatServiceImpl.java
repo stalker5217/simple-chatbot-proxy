@@ -1,26 +1,65 @@
 package com.simplechatbotproxy.chat.service.impl;
 
 import com.google.cloud.dialogflow.v2.*;
+import com.simplechatbotproxy.chat.model.QueryMessage;
+import com.simplechatbotproxy.chat.model.ResultMessage;
+import com.simplechatbotproxy.chat.service.ChatService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.UUID;
 
 @Slf4j
 @Service
-public class DialogflowCommonService {
-    public QueryResult detectIntentByEvent(String eventName) throws IOException {
+public class DialogflowChatServiceImpl implements ChatService {
+    private static final String WELCOME = "Welcome";
+    private static final String NULL_POINTER_EXCEPTION_MSG = "Cannot resolve welcome message";
+
+    public ResultMessage getWelcomeMessage(QueryMessage queryMessage){
+        ResultMessage welcomeMessage;
+
+        try{
+            queryMessage.setEvent(WELCOME);
+            QueryResult queryResult = detectIntentByEvent(queryMessage);
+
+            welcomeMessage = new ResultMessage();
+            welcomeMessage.setText(queryResult.getFulfillmentText());
+        }
+        catch(IOException e){
+            log.error(e.getMessage());
+            throw new NullPointerException(NULL_POINTER_EXCEPTION_MSG);
+        }
+
+        return welcomeMessage;
+    }
+
+    public ResultMessage getQueryResultMessage(QueryMessage queryMessage){
+        ResultMessage resultMessage;
+
+        try{
+            QueryResult queryResult = detectIntentByText(queryMessage);
+
+            resultMessage = new ResultMessage();
+            resultMessage.setText(queryResult.getFulfillmentText());
+        }
+        catch(IOException e){
+            log.error(e.getMessage());
+            throw new NullPointerException(NULL_POINTER_EXCEPTION_MSG);
+        }
+
+        return resultMessage;
+    }
+
+    private QueryResult detectIntentByEvent(QueryMessage queryMessage) throws IOException {
         try (SessionsClient sessionsClient = SessionsClient.create()) {
-            UUID uuid = UUID.randomUUID();
-            SessionName sessionName = SessionName.of("song-chat-service", uuid.toString());
+            SessionName sessionName = SessionName.of(queryMessage.getTargetBot(), queryMessage.getChatSessionId());
 
             log.info(String.format("Session Path : %s", sessionName.toString()));
 
             EventInput eventInput = EventInput
                     .newBuilder()
                     .setLanguageCode("ko-KR")
-                    .setName(eventName)
+                    .setName(queryMessage.getEvent())
                     .build();
 
             QueryInput queryInput = QueryInput
@@ -31,17 +70,16 @@ public class DialogflowCommonService {
         }
     }
 
-    public QueryResult detectIntentByText(String text) throws IOException{
+    private QueryResult detectIntentByText(QueryMessage queryMessage) throws IOException{
         try (SessionsClient sessionsClient = SessionsClient.create()) {
-            UUID uuid = UUID.randomUUID();
-            SessionName sessionName = SessionName.of("song-chat-service", uuid.toString());
+            SessionName sessionName = SessionName.of(queryMessage.getTargetBot(), queryMessage.getChatSessionId());
 
             log.info(String.format("Session Path : %s", sessionName.toString()));
 
             TextInput textInput = TextInput
                     .newBuilder()
                     .setLanguageCode("ko-KR")
-                    .setText(text)
+                    .setText(queryMessage.getQueryText())
                     .build();
 
             QueryInput queryInput = QueryInput
