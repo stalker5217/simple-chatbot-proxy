@@ -38,3 +38,6 @@ out/
 
 ### Auth Key ###
 **/credentials/
+
+### H2 Database ###
+*.sql
