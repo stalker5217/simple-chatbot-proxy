@@ -3,49 +3,92 @@ package com.simplechatbotproxy.chat.service.impl;
 import com.google.cloud.dialogflow.v2.*;
 import com.simplechatbotproxy.chat.model.QueryMessage;
 import com.simplechatbotproxy.chat.model.ResultMessage;
+import com.simplechatbotproxy.chat.repository.ConversationHistoryRepository;
+import com.simplechatbotproxy.chat.repository.SessionHistoryRepository;
+import com.simplechatbotproxy.chat.repository.entity.ChatbotInfo;
+import com.simplechatbotproxy.chat.repository.entity.ConversationHistory;
+import com.simplechatbotproxy.chat.repository.entity.SessionHistory;
 import com.simplechatbotproxy.chat.service.ChatService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Slf4j
 @Service
 public class DialogflowChatServiceImpl implements ChatService {
     private static final String WELCOME = "Welcome";
-    private static final String NULL_POINTER_EXCEPTION_MSG = "Cannot resolve welcome message";
 
-    public ResultMessage getWelcomeMessage(QueryMessage queryMessage){
-        ResultMessage welcomeMessage;
+    private final BotInfoService botInfoService;
+    private final SessionHistoryRepository sessionHistoryRepository;
+    private final ConversationHistoryRepository conversationHistoryRepository;
 
-        try{
-            queryMessage.setEvent(WELCOME);
-            QueryResult queryResult = detectIntentByEvent(queryMessage);
+    @Autowired
+    public DialogflowChatServiceImpl(
+            BotInfoService botInfoService,
+            SessionHistoryRepository sessionHistoryRepository,
+            ConversationHistoryRepository conversationHistoryRepository)
+    {
+        this.botInfoService = botInfoService;
+        this.sessionHistoryRepository = sessionHistoryRepository;
+        this.conversationHistoryRepository = conversationHistoryRepository;
+    }
 
-            welcomeMessage = new ResultMessage();
-            welcomeMessage.setText(queryResult.getFulfillmentText());
-        }
-        catch(IOException e){
-            log.error(e.getMessage());
-            throw new NullPointerException(NULL_POINTER_EXCEPTION_MSG);
-        }
+    public ResultMessage getWelcomeMessage(QueryMessage queryMessage) throws IOException {
+        setTargetLanguageCode(queryMessage);
+        queryMessage.setEvent(WELCOME);
+        QueryResult queryResult = detectIntentByEvent(queryMessage);
+
+        ResultMessage welcomeMessage = new ResultMessage();
+        welcomeMessage.setText(queryResult.getFulfillmentText());
+
+        SessionHistory sessionHistory =
+                SessionHistory
+                        .builder()
+                        .chatSessionId(queryMessage.getChatSessionId())
+                        .botId(queryMessage.getTargetBot())
+                        .build();
+
+        sessionHistoryRepository.save(sessionHistory);
+
+        ConversationHistory conversationHistory
+                = ConversationHistory
+                .builder()
+                .chatSessionId(queryMessage.getChatSessionId())
+                .event(queryMessage.getEvent())
+                .responseText(queryResult.getFulfillmentText())
+                .intentName(queryResult.getIntent().getDisplayName())
+                .fallbackFlag(queryResult.getIntent().getIsFallback())
+                .intentDetectionConfidence(queryResult.getIntentDetectionConfidence())
+                .build();
+
+        conversationHistoryRepository.save(conversationHistory);
 
         return welcomeMessage;
     }
 
-    public ResultMessage getQueryResultMessage(QueryMessage queryMessage){
-        ResultMessage resultMessage;
+    public ResultMessage getQueryResultMessage(QueryMessage queryMessage) throws IOException{
+        setTargetLanguageCode(queryMessage);
 
-        try{
-            QueryResult queryResult = detectIntentByText(queryMessage);
+        QueryResult queryResult = detectIntentByText(queryMessage);
 
-            resultMessage = new ResultMessage();
-            resultMessage.setText(queryResult.getFulfillmentText());
-        }
-        catch(IOException e){
-            log.error(e.getMessage());
-            throw new NullPointerException(NULL_POINTER_EXCEPTION_MSG);
-        }
+        ResultMessage resultMessage = new ResultMessage();
+        resultMessage.setText(queryResult.getFulfillmentText());
+
+        ConversationHistory conversationHistory
+                = ConversationHistory
+                .builder()
+                .chatSessionId(queryMessage.getChatSessionId())
+                .queryText(queryMessage.getQueryText())
+                .responseText(queryResult.getFulfillmentText())
+                .intentName(queryResult.getIntent().getDisplayName())
+                .fallbackFlag(queryResult.getIntent().getIsFallback())
+                .intentDetectionConfidence(queryResult.getIntentDetectionConfidence())
+                .build();
+
+        conversationHistoryRepository.save(conversationHistory);
 
         return resultMessage;
     }
@@ -58,7 +101,7 @@ public class DialogflowChatServiceImpl implements ChatService {
 
             EventInput eventInput = EventInput
                     .newBuilder()
-                    .setLanguageCode("ko-KR")
+                    .setLanguageCode(queryMessage.getLanguageCode())
                     .setName(queryMessage.getEvent())
                     .build();
 
@@ -78,7 +121,7 @@ public class DialogflowChatServiceImpl implements ChatService {
 
             TextInput textInput = TextInput
                     .newBuilder()
-                    .setLanguageCode("ko-KR")
+                    .setLanguageCode(queryMessage.getLanguageCode())
                     .setText(queryMessage.getQueryText())
                     .build();
 
@@ -103,5 +146,15 @@ public class DialogflowChatServiceImpl implements ChatService {
         log.info("====================");
 
         return queryResult;
+    }
+
+    private void setTargetLanguageCode(QueryMessage queryMessage){
+        Optional<ChatbotInfo> botInfo = botInfoService.getBotInfo(queryMessage.getTargetBot());
+        if(botInfo.isPresent()){
+            queryMessage.setLanguageCode(botInfo.get().getLanguageCode());
+        }
+        else{
+            throw new IllegalArgumentException("CAN NOT RESOLVE TARGET CHATBOT INFORMATION");
+        }
     }
 }
