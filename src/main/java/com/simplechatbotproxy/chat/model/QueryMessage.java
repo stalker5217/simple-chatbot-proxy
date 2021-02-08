@@ -7,6 +7,7 @@ import javax.validation.constraints.Pattern;
 @Data
 public class QueryMessage {
     private String targetBot;
+    private String languageCode;
     private String queryText;
     private String event;
 

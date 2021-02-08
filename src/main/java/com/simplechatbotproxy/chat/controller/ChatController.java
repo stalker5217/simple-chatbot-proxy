@@ -6,20 +6,17 @@ import com.simplechatbotproxy.chat.service.ChatService;
 import com.simplechatbotproxy.chat.service.CommonService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.io.IOException;
 
 @Slf4j
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
-    private static final String INVALID_REQUEST_LOG = "Invalid Request";
-    private static final String CHAT_SESSION_ID = "Chat-Session-Id";
-
     private final CommonService commonService;
     private final ChatService chatService;
 
@@ -30,28 +27,23 @@ public class ChatController {
     }
 
     @GetMapping("/welcome")
-    public ResponseEntity<ResultMessage> welcome(@RequestParam String targetBot){
+    public ResponseEntity<ResultMessage> welcome(@RequestParam String targetBot) throws IOException {
         log.info("Handling [/chat/welcome] Start");
 
         ResponseEntity<ResultMessage> ret;
-        try{
-            String chatSessionId = commonService.generateChatSessionId();
 
-            QueryMessage queryMessage = new QueryMessage();
-            queryMessage.setTargetBot(targetBot);
-            queryMessage.setChatSessionId(chatSessionId);
+        String chatSessionId = commonService.generateChatSessionId();
 
-            ResultMessage welcomeMessage = chatService.getWelcomeMessage(queryMessage);
+        QueryMessage queryMessage = new QueryMessage();
+        queryMessage.setTargetBot(targetBot);
+        queryMessage.setChatSessionId(chatSessionId);
 
-            ret = ResponseEntity
-                    .ok()
-                    .header(CHAT_SESSION_ID, chatSessionId)
-                    .body(welcomeMessage);
-        }
-        catch(NullPointerException e){
-            log.error(e.getMessage());
-            ret = ResponseEntity.status((HttpStatus.INTERNAL_SERVER_ERROR)).build();
-        }
+        ResultMessage welcomeMessage = chatService.getWelcomeMessage(queryMessage);
+
+        ret = ResponseEntity
+                .ok()
+                .header("CHAT_SESSION_ID", chatSessionId)
+                .body(welcomeMessage);
 
         log.info("Handling [/chat/welcome] End");
 
@@ -61,27 +53,21 @@ public class ChatController {
     @GetMapping("/query")
     public ResponseEntity<ResultMessage> chatQuery(
             @ModelAttribute @Valid QueryMessage queryMessage,
-            Errors errors){
+            Errors errors) throws IOException{
 
         log.info("Handling [/chat/query] Start");
 
         if(errors.hasErrors()){
-            log.warn(INVALID_REQUEST_LOG);
+            log.error("INVALID_REQUEST");
             return ResponseEntity.badRequest().build();
         }
 
         ResponseEntity<ResultMessage> ret;
-        try{
-            ResultMessage resultMessage = chatService.getQueryResultMessage(queryMessage);
+        ResultMessage resultMessage = chatService.getQueryResultMessage(queryMessage);
 
-            ret = ResponseEntity
-                    .ok()
-                    .body(resultMessage);
-        }
-        catch(NullPointerException e){
-            log.error(e.getMessage());
-            ret = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        ret = ResponseEntity
+                .ok()
+                .body(resultMessage);
 
         log.info("Handling [/chat/query] End");
 
