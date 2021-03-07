@@ -7,6 +7,7 @@ import com.simplechatbotproxy.chat.service.CommonService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -42,8 +43,7 @@ public class ChatController {
         ResultMessage welcomeMessage = chatService.getWelcomeMessage(queryMessage);
 
         EntityModel<ResultMessage> entityModel = EntityModel.of(welcomeMessage);
-        entityModel.add(linkTo(ChatController.class).withSelfRel());
-        entityModel.add(linkTo(ChatController.class).withRel("query"));
+        entityModel.add(getQueryLink());
 
         ResponseEntity<EntityModel<ResultMessage>> ret = ResponseEntity
                 .ok()
@@ -70,8 +70,7 @@ public class ChatController {
         ResultMessage resultMessage = chatService.getQueryResultMessage(queryMessage);
 
         EntityModel<ResultMessage> entityModel = EntityModel.of(resultMessage);
-        entityModel.add(linkTo(ChatController.class).withSelfRel());
-        entityModel.add(linkTo(ChatController.class).withRel("query"));
+        entityModel.add(getQueryLink());
 
         ResponseEntity<EntityModel<ResultMessage>> ret = ResponseEntity
                 .ok()
@@ -80,5 +79,9 @@ public class ChatController {
         log.info("Handling [/chat/query] End");
 
         return ret;
+    }
+
+    private Link getQueryLink(){
+        return linkTo(ChatController.class).slash("query").withRel("query");
     }
 }
