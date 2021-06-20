@@ -3,11 +3,12 @@ package com.simplechatbotproxy.chat.controller;
 import com.simplechatbotproxy.chat.model.QueryMessage;
 import com.simplechatbotproxy.chat.model.ResultMessage;
 import com.simplechatbotproxy.chat.service.ChatService;
-import com.simplechatbotproxy.chat.service.CommonService;
+import com.simplechatbotproxy.chat.util.CommonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -19,22 +20,22 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @Slf4j
 @RestController
-@RequestMapping("/chat")
+@RequestMapping(value="/chat", produces=MediaTypes.HAL_JSON_VALUE)
 public class ChatController {
-    private final CommonService commonService;
+    private final CommonUtil commonUtil;
     private final ChatService chatService;
 
     @Autowired
-    public ChatController(CommonService commonService, ChatService chatService){
-        this.commonService = commonService;
+    public ChatController(CommonUtil commonUtil, ChatService chatService){
+        this.commonUtil = commonUtil;
         this.chatService = chatService;
     }
 
-    @GetMapping("/welcome")
+    @GetMapping(value="/welcome")
     public ResponseEntity<EntityModel<ResultMessage>> welcome(@RequestParam String targetBot) throws IOException {
         log.info("Handling [/chat/welcome] Start");
 
-        String chatSessionId = commonService.generateChatSessionId();
+        String chatSessionId = commonUtil.generateChatSessionId();
 
         QueryMessage queryMessage = new QueryMessage();
         queryMessage.setTargetBot(targetBot);
@@ -47,7 +48,7 @@ public class ChatController {
 
         ResponseEntity<EntityModel<ResultMessage>> ret = ResponseEntity
                 .ok()
-                .header("CHAT_SESSION_ID", chatSessionId)
+                .header("CHAT-SESSION-ID", chatSessionId)
                 .body(entityModel);
 
         log.info("Handling [/chat/welcome] End");
