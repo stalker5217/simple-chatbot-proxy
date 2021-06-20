@@ -13,31 +13,34 @@ import java.io.IOException;
 @Slf4j
 @RestControllerAdvice("com.simplechatbotproxy.chat")
 public class ChatControllerAdvice {
+    private final static String BAD_REQUEST = "400: BAD REQUEST";
+    private final static String INTERNAL_SERVER_ERROR = "500: INTERNAL SERVER ERROR";
+
     @ExceptionHandler(value={IOException.class})
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorMessage ioExceptionHandler(IOException e){
         log.error(e.getMessage());
-        return new ErrorMessage(e.getMessage());
+        return new ErrorMessage(INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(value=IllegalStateException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorMessage illegalStateHandler(NullPointerException e){
         log.error(e.getMessage());
-        return new ErrorMessage(e.getMessage());
+        return new ErrorMessage(BAD_REQUEST);
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorMessage illegalArgumentHandler(IllegalArgumentException e){
         log.error(e.getMessage());
-        return new ErrorMessage(e.getMessage());
+        return new ErrorMessage(BAD_REQUEST);
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorMessage statusRuntime(StatusRuntimeException e){
         log.error(e.getMessage());
-        return new ErrorMessage(e.getMessage());
+        return new ErrorMessage(BAD_REQUEST);
     }
 }
