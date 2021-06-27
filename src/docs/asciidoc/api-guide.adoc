@@ -1,0 +1,29 @@
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 4
+:sectlinks:
+:operation-curl-request-title: Example request
+:operation-http-response-title: Example response
+
+[[Overview]]
+== Overview
+
+Simple Chatbot API Document.
+
+[[welcome]]
+=== Welcome API
+
+챗봇 최초 진입 시 호출하며 초기 인사말과 해당 채팅에서 사용할 세션 ID를 반환함.
+
+operation::welcome[snippets='request-parameters,response-headers,response-body,response-fields']
+
+include::{snippets}/welcome/http-response.adoc[]
+
+[[query]]
+=== Query API
+
+챗봇에 질의를 하고 그에 대한 응답을 반환함.
+
+operation::query[snippets='request-parameters,response-body,response-fields']
