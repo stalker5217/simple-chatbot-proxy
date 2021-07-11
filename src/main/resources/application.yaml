@@ -6,3 +6,21 @@ spring:
   datasource:
     url: jdbc:h2:mem:testdb
     initialization-mode: always
+  jackson:
+    serialization:
+      indent_output: true
+  application:
+    name: proxy
+  boot:
+    admin:
+      client:
+        url: http://localhost:9090
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+    jmx:
+      exposure:
+        include: "*"
