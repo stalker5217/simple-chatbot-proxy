@@ -1,13 +1,17 @@
 package com.simplechatbotproxy.chat.controller;
 
-import com.simplechatbotproxy.chat.repository.SessionHistoryRepository;
-import com.simplechatbotproxy.chat.repository.entity.SessionHistory;
-import com.simplechatbotproxy.chat.util.CommonUtil;
-import com.simplechatbotproxy.common.RestDocsConfiguration;
-import org.junit.jupiter.api.BeforeAll;
+import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.*;
+import static org.springframework.restdocs.headers.HeaderDocumentation.*;
+import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import javax.transaction.Transactional;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -15,27 +19,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
-import org.springframework.restdocs.RestDocumentationExtension;
+import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
-import javax.transaction.Transactional;
-
-import static org.springframework.restdocs.headers.HeaderDocumentation.*;
-import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
-import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
-import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.simplechatbotproxy.chat.repository.SessionHistoryRepository;
+import com.simplechatbotproxy.chat.repository.entity.SessionHistory;
+import com.simplechatbotproxy.chat.util.CommonUtil;
+import com.simplechatbotproxy.common.RestDocsConfiguration;
 
 @ExtendWith({SpringExtension.class})
 @SpringBootTest
@@ -56,7 +47,7 @@ class ChatControllerTest {
     void welcome() throws Exception {
         mockMvc
                 .perform(
-                MockMvcRequestBuilders
+                    RestDocumentationRequestBuilders
                         .get("/chat/welcome")
                         .param("targetBot", "song-chat-service")
                 )
@@ -89,7 +80,7 @@ class ChatControllerTest {
     void chatQuery_BadRequest() throws Exception {
         mockMvc
                 .perform(
-                        MockMvcRequestBuilders
+                    RestDocumentationRequestBuilders
                                 .get("/chat/query")
                                 .param("targetBot", "song-chat-service")
                                 .param("queryText", "Hello World!")
@@ -115,7 +106,7 @@ class ChatControllerTest {
 
         mockMvc
                 .perform(
-                        MockMvcRequestBuilders
+                    RestDocumentationRequestBuilders
                                 .get("/chat/query")
                                 .param("targetBot", targetBot)
                                 .param("queryText", "Hello World!")

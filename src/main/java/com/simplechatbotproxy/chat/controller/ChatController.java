@@ -4,6 +4,7 @@ import com.simplechatbotproxy.chat.model.QueryMessage;
 import com.simplechatbotproxy.chat.model.ResultMessage;
 import com.simplechatbotproxy.chat.service.ChatService;
 import com.simplechatbotproxy.chat.util.CommonUtil;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.EntityModel;

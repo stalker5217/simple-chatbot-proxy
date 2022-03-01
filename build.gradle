@@ -2,8 +2,12 @@ plugins {
     id 'org.springframework.boot' version '2.4.2'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
-    id 'org.asciidoctor.convert' version '1.5.9.2'
+
     id "com.gorylenko.gradle-git-properties" version "2.3.1"
+
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'com.epages.restdocs-api-spec' version '0.15.3'
+    id 'org.hidetake.swagger.generator' version '2.18.2'
 }
 
 group = 'com'
@@ -20,48 +24,75 @@ repositories {
     mavenCentral()
 }
 
-ext {
-    snippetsDir =  file("build/generated-snippets")
+configurations {
+    asciidoctorExt
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-hateoas'
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
-    implementation 'junit:junit:4.13.1'
-    implementation group: 'de.codecentric', name: 'spring-boot-admin-starter-client', version: '2.4.3'
-
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '2.4.2'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     compile group: 'com.google.cloud', name: 'google-cloud-dialogflow', version: '2.4.6'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '2.4.2'
 
     runtimeOnly 'com.h2database:h2'
     compile('org.springframework.boot:spring-boot-starter-data-jpa')
 
     compileOnly 'org.projectlombok:lombok'
-
     annotationProcessor 'org.projectlombok:lombok'
 
+    implementation 'junit:junit:4.13.2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
 
-    asciidoctor 'org.springframework.restdocs:spring-restdocs-asciidoctor'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
+    implementation group: 'de.codecentric', name: 'spring-boot-admin-starter-client', version: '2.4.3'
+
+    asciidoctorExt 'org.springframework.restdocs:spring-restdocs-asciidoctor'
+    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+    testImplementation 'com.epages:restdocs-api-spec-mockmvc:0.15.2'
+    swaggerUI 'org.webjars:swagger-ui:4.5.0'
+}
+
+ext {
+    snippetsDir = file("build/generated-snippets")
 }
 
 test {
-    outputs.dir snippetsDir
     useJUnitPlatform()
+    outputs.dir snippetsDir
 }
 
 asciidoctor {
     inputs.dir snippetsDir
+    configurations 'asciidoctorExt'
     dependsOn test
+}
+
+openapi3 {
+    server = 'http://localhost:8080'
+    title = 'Chatbot API'
+    description = 'Chatbot API Description'
+    version = '0.1.0'
+    format = 'yaml'
+}
+
+generateSwaggerUI {
+    inputFile = file("${project.buildDir}/api-spec/openapi3.yaml")
+    dependsOn 'openapi3'
 }
 
 bootJar {
     dependsOn asciidoctor
-    from ("${asciidoctor.outputDir}/html5") {
-        into 'static/docs'
+
+    from("${asciidoctor.outputDir}"){
+        into "static/docs"
+    }
+
+    dependsOn generateSwaggerUI
+
+    println("${generateSwaggerUI.outputDir}")
+    from("${generateSwaggerUI.outputDir}") {
+        into 'static/docs/swagger-ui'
     }
 }
